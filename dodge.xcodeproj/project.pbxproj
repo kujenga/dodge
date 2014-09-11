@@ -11,6 +11,7 @@
 		860423AE19C1A13D00A5BBCA /* dodge.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 860423AD19C1A13D00A5BBCA /* dodge.1 */; };
 		8693004B19C1A23A00592FE9 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8693004A19C1A23A00592FE9 /* OpenGL.framework */; };
 		8693004D19C1A23F00592FE9 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8693004C19C1A23F00592FE9 /* GLUT.framework */; };
+		86F0C54419C25EF200B4975C /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = 86F0C54319C25EF200B4975C /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -32,6 +33,7 @@
 		860423AD19C1A13D00A5BBCA /* dodge.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; name = dodge.1; path = dodge/dodge.1; sourceTree = "<group>"; };
 		8693004A19C1A23A00592FE9 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		8693004C19C1A23F00592FE9 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
+		86F0C54319C25EF200B4975C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +52,7 @@
 		8604239F19C1A13C00A5BBCA = {
 			isa = PBXGroup;
 			children = (
+				86F0C54319C25EF200B4975C /* README.md */,
 				860423AA19C1A13D00A5BBCA /* dodge */,
 				860423A919C1A13D00A5BBCA /* Products */,
 				8693004C19C1A23F00592FE9 /* GLUT.framework */,
@@ -126,6 +129,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				86F0C54419C25EF200B4975C /* README.md in Sources */,
 				860423AC19C1A13D00A5BBCA /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
