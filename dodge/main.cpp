@@ -34,6 +34,7 @@
 #define NUM_BLOCKS 45
 #define STEP_SIZE 0.02
 #define MOUSE_WEIGHT 25.0
+#define PLAYER_SIZE 0.05
 #define COLLISION_DIST 0.07
 
 //////////////////////////////
@@ -112,7 +113,7 @@ public:
     {
         baseYOffset = LITTLE_RAND * 2.0 - 1.0;
         yOffset = baseYOffset;
-        xOffset = LITTLE_RAND * 3.0 - 4.0;
+        xOffset = LITTLE_RAND * 3.0 - 3.0;
         size = LITTLE_RAND * 0.07 + 0.02;
         speedMultiplier = LITTLE_RAND * 0.5 + 0.8;
         verticalMovement = LITTLE_RAND * 0.01 - 0.005;
@@ -135,8 +136,38 @@ public:
         glVertex2d(xOffset + 0.8 * size, yOffset - size);
         glEnd();
     }
-    bool hasCollided(float x, float y) {
-        if (fabsf(x - xOffset) < COLLISION_DIST && fabsf(y - yOffset) < COLLISION_DIST ) {
+    // takes as parameters the left upper corner of the player and the right lower, in order to calculate collisions
+    bool hasCollided(float lx, float uy, float rx, float ly) {
+        // checks if this block contains any of the 4 corners of the player
+        if (selfContainsPoint(lx, uy) ||
+            selfContainsPoint(lx, ly) ||
+            selfContainsPoint(rx, uy) ||
+            selfContainsPoint(rx, ly) ) {
+            return true;
+        }
+        return false;
+    }
+private:
+    bool selfContainsPoint(float x, float y)
+    {
+        // top vertice
+        float xt = xOffset;
+        float yt = yOffset + size;
+        // bottom left vertice
+        float xl = xOffset - 0.8 * size;
+        float yl = yOffset - size;
+        // bottom right vertice
+        float xr = xOffset + 0.8 * size;
+        float yr = yOffset - size;
+        
+        // slopes of the sides
+        float mr = (yt-yr)/(xt-xr);
+        float ml = (yt-yl)/(xt-xl); // or -1*mr for the current setup
+        
+        if (y < (mr*(x-xr) + yr) && // under the right side
+            y < (ml*(x-xl) + yl) && // under the left side
+            y > yr                  // over the bottom
+            ) {
             return true;
         }
         return false;
@@ -165,17 +196,17 @@ public:
         glBegin(GL_POLYGON);
         glColor3d(1.0, 0.1, 0.1);
         // upper right edge
-        glVertex2d(0.90, yOffset + 0.02);
-        glVertex2d(0.95, yOffset + 0.05);
+        glVertex2d(0.90, yOffset + 0.4*PLAYER_SIZE);
+        glVertex2d(0.95, yOffset + PLAYER_SIZE);
         // right inset
         glVertex2d(0.92, yOffset );
         // lower edge
-        glVertex2d(0.95, yOffset - 0.05);
-        glVertex2d(0.90, yOffset - 0.02);
-        glVertex2d(0.85, yOffset - 0.05);
+        glVertex2d(0.95, yOffset - PLAYER_SIZE);
+        glVertex2d(0.90, yOffset - 0.4*PLAYER_SIZE);
+        glVertex2d(0.85, yOffset - PLAYER_SIZE);
         // upper left
         glVertex2d(0.88, yOffset );
-        glVertex2d(0.85, yOffset + 0.05);
+        glVertex2d(0.85, yOffset + PLAYER_SIZE);
         glEnd();
     }
     void drawDeath(float pos) {
@@ -414,7 +445,9 @@ void onDisplay()
     drawScore();
     
     for (int i = 0; i < NUM_BLOCKS; i++) {
-        if (blocks[i]->hasCollided(0.9, player->yOffset)) {
+        float px = 0.9;
+        float py = player->yOffset;
+        if (blocks[i]->hasCollided(px - PLAYER_SIZE, py + PLAYER_SIZE, px + PLAYER_SIZE, py - PLAYER_SIZE)) {
             alive = false;
         } else {
             blocks[i]->draw();
