@@ -159,7 +159,9 @@ public:
     }
     void draw(float pos)
     {
-        yOffset = pos;
+        // turnary statements ensure that the player is within the bounds of the screen
+        pos = pos > -1.0 ? pos : -1.0;
+        yOffset = pos < 1.0 ? pos : 1.0;
         glBegin(GL_POLYGON);
         glColor3d(1.0, 0.1, 0.1);
         // upper right edge
@@ -365,21 +367,22 @@ void onMotion(int x, int y)
 void onIdle()
 {
     // time elapsed since program started, in seconds
-    double t = glutGet(GLUT_ELAPSED_TIME) * 0.001;
+    double cur_t = glutGet(GLUT_ELAPSED_TIME) * 0.001;
     
     // variable to remember last time idle was called
     static double lastTime = 0.0;
     // time difference between calls: time step
-    double dt = t - lastTime;
+    double dt = cur_t - lastTime;
     // store time
     if (alive) {
-        lastTime = t;
+        lastTime = cur_t;
     } else {
-        gameStart = t;
+        lastTime = cur_t;
+        gameStart = cur_t;
     }
     
     // base speed of 0.2 units/sec, increases as game progresses
-    float inc = dt * 0.2 + 0.01 * (t - gameStart);
+    float inc = dt * 0.2 + 0.01 * (cur_t - gameStart);
     for (int i = 0; alive && i < NUM_BLOCKS; i++)
     {
         blocks[i]->moveX(dt * inc);
