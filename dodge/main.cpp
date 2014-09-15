@@ -67,6 +67,8 @@ int score = 0;
 // game objects
 //////////////////////////////
 
+// objects coming across the screen that are to be avoided
+// currently all triangles with randomized colors and sizes within set bounds
 class Block {
     float baseYOffset = 0.5; // allows for centered behavior such as sine curves
     float yOffset = 0.5;
@@ -113,7 +115,7 @@ public:
     {
         baseYOffset = LITTLE_RAND * 2.0 - 1.0;
         yOffset = baseYOffset;
-        xOffset = LITTLE_RAND * 3.0 - 3.0;
+        xOffset = LITTLE_RAND * 3.0 - 3.5;
         size = LITTLE_RAND * 0.07 + 0.02;
         speedMultiplier = LITTLE_RAND * 0.5 + 0.8;
         verticalMovement = LITTLE_RAND * 0.01 - 0.005;
@@ -138,6 +140,9 @@ public:
     }
     // takes as parameters the left upper corner of the player and the right lower, in order to calculate collisions
     bool hasCollided(float lx, float uy, float rx, float ly) {
+        if (xOffset < 0.75) {
+            return false; // eliminates unnecessary calculations on blocks that could not contact player with a fixed x coordinate
+        }
         // checks if this block contains any of the 4 corners of the player
         if (selfContainsPoint(lx, uy) ||
             selfContainsPoint(lx, ly) ||
@@ -148,6 +153,7 @@ public:
         return false;
     }
 private:
+    // determines whether or not the given point is within the bounds of the block (which is a triangle)
     bool selfContainsPoint(float x, float y)
     {
         // top vertice
@@ -174,6 +180,7 @@ private:
     }
 };
 
+// the icon for the player in a start shape
 class Player {
 public:
     float yOffset = 0.0;
@@ -209,8 +216,35 @@ public:
         glVertex2d(0.85, yOffset + PLAYER_SIZE);
         glEnd();
     }
-    void drawDeath(float pos) {
+    void drawDeath(float pos, float t) {
+        float tdiv = ((1.0 + t)*1.05);
         
+        glBegin(GL_POLYGON);
+        glColor3d(1.0, 0.5, 0.0);
+        float backScale = 0.06 - 0.06/tdiv;
+        glVertex2d(0.90, yOffset + backScale);
+        glVertex2d(0.90 + backScale, yOffset);
+        glVertex2d(0.90, yOffset - backScale);
+        glVertex2d(0.90 - backScale, yOffset);
+        glEnd();
+        
+        
+        // original shape shrinks and goes to black
+        glBegin(GL_POLYGON);
+        glColor3d(1.0 / tdiv, 0.1, 0.1);
+        // upper right edge
+        glVertex2d(0.90, yOffset + (0.4/tdiv)*PLAYER_SIZE);
+        glVertex2d(0.95, yOffset + PLAYER_SIZE);
+        // right inset
+        glVertex2d(0.92, yOffset );
+        // lower edge
+        glVertex2d(0.95, yOffset - PLAYER_SIZE);
+        glVertex2d(0.90, yOffset - (0.4/tdiv)*PLAYER_SIZE);
+        glVertex2d(0.85, yOffset - PLAYER_SIZE);
+        // upper left
+        glVertex2d(0.88, yOffset );
+        glVertex2d(0.85, yOffset + PLAYER_SIZE);
+        glEnd();
     }
 };
 
@@ -226,7 +260,8 @@ bool alive = false;
 float weightedMousePos = 0.0;
 float curMousePos = 0.0;
 
-float gameStart = 0;
+float gameStart = 0.0;
+float deathTime = 0.0;
 
 Block *blocks[NUM_BLOCKS];
 
@@ -448,13 +483,21 @@ void onDisplay()
         float px = 0.9;
         float py = player->yOffset;
         if (blocks[i]->hasCollided(px - PLAYER_SIZE, py + PLAYER_SIZE, px + PLAYER_SIZE, py - PLAYER_SIZE)) {
-            alive = false;
+            if (alive) {
+                alive = false;
+                deathTime = glutGet(GLUT_ELAPSED_TIME) * 0.001;
+            }
         } else {
             blocks[i]->draw();
         }
         
     }
-    player->draw(weightedMousePos);
+    if (alive) {
+        player->draw(weightedMousePos);
+    } else {
+        float t_death = glutGet(GLUT_ELAPSED_TIME) * 0.001 - deathTime;
+        player->drawDeath(weightedMousePos, t_death);
+    }
     
     glutSwapBuffers();
 }
