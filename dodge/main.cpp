@@ -31,7 +31,7 @@
 // game tuning parameters
 //////////////////////////////
 
-#define NUM_BLOCKS 45
+#define NUM_BLOCKS 42
 #define STEP_SIZE 0.02
 #define MOUSE_WEIGHT 25.0
 #define PLAYER_SIZE 0.05
@@ -59,9 +59,9 @@ typedef enum{
     jitterGame
 }mode;
 
-mode gameMode = selection;
+mode _gameMode = selection;
 
-int score = 0;
+int _score = 0;
 
 //////////////////////////////
 // game objects
@@ -90,7 +90,7 @@ public:
     void moveX(float i)
     {
         xOffset += i * speedMultiplier;
-        switch (gameMode) {
+        switch (_gameMode) {
             case straightGame:
                 // nothing to do
                 break;
@@ -115,7 +115,7 @@ public:
     {
         baseYOffset = LITTLE_RAND * 2.0 - 1.0;
         yOffset = baseYOffset;
-        xOffset = LITTLE_RAND * 3.0 - 3.5;
+        xOffset = LITTLE_RAND * 3.0 - 4.0;
         size = LITTLE_RAND * 0.07 + 0.02;
         speedMultiplier = LITTLE_RAND * 0.5 + 0.8;
         verticalMovement = LITTLE_RAND * 0.01 - 0.005;
@@ -129,7 +129,7 @@ public:
         if (xOffset > 1.09) {
             setRandValues();
             // if a block is reset, it has passed the player so the score is incremented
-            score += 1;
+            _score += 1;
         }
         glBegin(GL_POLYGON);
         glColor3d(rColor,gColor,bColor);
@@ -252,20 +252,17 @@ public:
 // global variables for game code
 //////////////////////////////
 
-bool showPlayer = false;
-bool newPlayer = false;
+bool _alive = false;
 
-bool alive = false;
+float _weightedMousePos = 0.0;
+float _curMousePos = 0.0;
 
-float weightedMousePos = 0.0;
-float curMousePos = 0.0;
+float _gameStart = 0.0;
+float _deathTime = 0.0;
 
-float gameStart = 0.0;
-float deathTime = 0.0;
+Block *_blocks[NUM_BLOCKS];
 
-Block *blocks[NUM_BLOCKS];
-
-Player *player;
+Player *_player;
 
 //////////////////////////////
 // game actions
@@ -273,15 +270,15 @@ Player *player;
 
 void returnToLife( )
 {
-    if (alive) {
+    if (_alive) {
         return;
     }
     
-    alive = true;
-    score = 0;
+    _alive = true;
+    _score = 0;
     for (int i = 0; i < NUM_BLOCKS; i++) {
-        blocks[i]->setRandValues();
-        blocks[i]->moveX(0.5);
+        _blocks[i]->setRandValues();
+        _blocks[i]->moveX(0.5);
     }
 }
 
@@ -323,7 +320,7 @@ void drawGround( )
 {
     glBegin(GL_POLYGON);
     
-    if (alive) {
+    if (_alive) {
         glColor3d(0.9f, 0.7f, 0.3f);
     } else {
         glColor3d(0.9f, 0.1f, 0.3f);
@@ -333,7 +330,7 @@ void drawGround( )
     for (int i = -10; i < 10; i++) {
         i%2 == 0 ? glVertex2d(0.1*i, -0.8) : glVertex2d(0.1*i, -0.5);
     }
-    if (alive) {
+    if (_alive) {
         glColor3d(0.9f, 0.7f, 0.3f);
     } else {
         glColor3d(0.9f, 0.1f, 0.3f);
@@ -348,13 +345,13 @@ void drawScore( )
     char buf[BUFSIZ];
     char name[] = "Score";
     
-    snprintf(buf, sizeof(buf), "%s: %08d", name, score);
+    snprintf(buf, sizeof(buf), "%s: %04d", name, _score);
     
     //printf("chars: %s\n",buf);
     //int len = (int)strlen(buf);
+    glColor3d(1.0f, 1.0f, 1.0f);
     glPushMatrix();
     glRasterPos2f(-0.97,0.9);
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     for (char *p = buf; *p; p++)
         glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *p);
     glPopMatrix();
@@ -384,29 +381,29 @@ void onKeyboard(unsigned char key, int x, int y)
             break;
             
         case '1':
-            gameMode = straightGame;
-            if (!alive) {
+            _gameMode = straightGame;
+            if (!_alive) {
                 returnToLife();
             }
             break;
             
         case '2':
-            gameMode = diagonalGame;
-            if (!alive) {
+            _gameMode = diagonalGame;
+            if (!_alive) {
                 returnToLife();
             }
             break;
             
         case '3':
-            gameMode = sinGame;
-            if (!alive) {
+            _gameMode = sinGame;
+            if (!_alive) {
                 returnToLife();
             }
             break;
             
         case '4':
-            gameMode = jitterGame;
-            if (!alive) {
+            _gameMode = jitterGame;
+            if (!_alive) {
                 returnToLife();
             }
             break;
@@ -422,12 +419,12 @@ void onKeyboard(unsigned char key, int x, int y)
 void onMotion(int x, int y)
 {
     int h = glutGet(GLUT_WINDOW_HEIGHT);
-    curMousePos = -2.0 * (float)y / (float)h + 1.0;
-    if (weightedMousePos == 0.0) {
-        weightedMousePos = curMousePos;
+    _curMousePos = -2.0 * (float)y / (float)h + 1.0;
+    if (_weightedMousePos == 0.0) {
+        _weightedMousePos = _curMousePos;
     }
-    weightedMousePos = ((weightedMousePos * (MOUSE_WEIGHT - 1)) + curMousePos) / MOUSE_WEIGHT;
-    //printf("cur: %f\nscore: %i\n",curMousePos,score);
+    _weightedMousePos = ((_weightedMousePos * (MOUSE_WEIGHT - 1)) + _curMousePos) / MOUSE_WEIGHT;
+    //printf("cur: %f\n_score: %i\n",_curMousePos,_score);
 }
 
 void onIdle()
@@ -440,21 +437,21 @@ void onIdle()
     // time difference between calls: time step
     double dt = cur_t - lastTime;
     // store time
-    if (alive) {
+    if (_alive) {
         lastTime = cur_t;
     } else {
         lastTime = cur_t;
-        gameStart = cur_t;
+        _gameStart = cur_t;
     }
     
     // base speed of 0.2 units/sec, increases as game progresses
-    float inc = dt * 0.2 + 0.01 * (cur_t - gameStart);
-    for (int i = 0; alive && i < NUM_BLOCKS; i++)
+    float inc = dt * 0.2 + 0.01 * (cur_t - _gameStart);
+    for (int i = 0; _alive && i < NUM_BLOCKS; i++)
     {
-        blocks[i]->moveX(dt * inc);
+        _blocks[i]->moveX(dt * inc);
     }
     
-    weightedMousePos = ((weightedMousePos * (MOUSE_WEIGHT - 1)) + curMousePos) / MOUSE_WEIGHT;
+    _weightedMousePos = ((_weightedMousePos * (MOUSE_WEIGHT - 1)) + _curMousePos) / MOUSE_WEIGHT;
     
     // show
     glutPostRedisplay();
@@ -469,35 +466,35 @@ void onDisplay()
     
     drawGround();
     
-    if (gameMode == selection) {
+    if (_gameMode == selection) {
         // show
         drawSelection();
         
         glutSwapBuffers();
         return;
     }
-
-    drawScore();
     
     for (int i = 0; i < NUM_BLOCKS; i++) {
         float px = 0.9;
-        float py = player->yOffset;
-        if (blocks[i]->hasCollided(px - PLAYER_SIZE, py + PLAYER_SIZE, px + PLAYER_SIZE, py - PLAYER_SIZE)) {
-            if (alive) {
-                alive = false;
-                deathTime = glutGet(GLUT_ELAPSED_TIME) * 0.001;
+        float py = _player->yOffset;
+        if (_blocks[i]->hasCollided(px - PLAYER_SIZE, py + PLAYER_SIZE, px + PLAYER_SIZE, py - PLAYER_SIZE)) {
+            if (_alive) {
+                _alive = false;
+                _deathTime = glutGet(GLUT_ELAPSED_TIME) * 0.001;
             }
         } else {
-            blocks[i]->draw();
+            _blocks[i]->draw();
         }
         
     }
-    if (alive) {
-        player->draw(weightedMousePos);
+    if (_alive) {
+        _player->draw(_weightedMousePos);
     } else {
-        float t_death = glutGet(GLUT_ELAPSED_TIME) * 0.001 - deathTime;
-        player->drawDeath(weightedMousePos, t_death);
+        float t_death = glutGet(GLUT_ELAPSED_TIME) * 0.001 - _deathTime;
+        _player->drawDeath(_weightedMousePos, t_death);
     }
+    
+    drawScore();
     
     glutSwapBuffers();
 }
@@ -507,17 +504,17 @@ void onDisplay()
 //////////////////////////////
 
 int main(int argc, char *argv[]) {
-    *blocks = new Block[NUM_BLOCKS];
+    *_blocks = new Block[NUM_BLOCKS];
     int i;
     Block * currentPointer;
     for (i = 0; i < NUM_BLOCKS; i++)
     {
         currentPointer = new Block();
-        blocks[i] = currentPointer;
+        _blocks[i] = currentPointer;
         //delete currentPointer;
     }
     
-    player = new Player();
+    _player = new Player();
     
     glutInit(&argc, argv);
     glutInitWindowSize(640, 480);
